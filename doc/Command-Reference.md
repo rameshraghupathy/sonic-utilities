@@ -43,6 +43,7 @@
   * [Console config commands](#console-config-commands)
   * [Console connect commands](#console-connect-commands)
   * [Console clear commands](#console-clear-commands)
+  * [DPU serial console utility](#dpu-serial-console-utility)
 * [CMIS firmware upgrade](#cmis-firmware-upgrade)
   * [CMIS firmware version show commands](#cmis-firmware-version-show-commands)
   * [CMIS firmware upgrade commands](#cmis-firmware-upgrade-commands)
@@ -229,6 +230,7 @@
 
 | Version | Modification Date | Details |
 | --- | --- | --- |
+| v9 | Sep-19-2024 | Add DPU serial console utility |
 | v8 | Oct-09-2023 | Add CMIS firmware upgrade commands |
 | v7 | Jun-22-2023 | Add static DNS show and config commands |
 | v6 | May-06-2021 | Add SNMP show and config commands |
@@ -2684,6 +2686,26 @@ This command displays the routing policy that takes precedence over the other ro
       Exit routemap
   ```
 
+**show suppress-fib-pending**
+
+This command is used to show the status of suppress pending FIB feature.
+When enabled, BGP will not advertise routes which aren't yet offloaded.
+
+- Usage:
+  ```
+  show suppress-fib-pending
+  ```
+
+- Examples:
+  ```
+  admin@sonic:~$ show suppress-fib-pending
+  Enabled
+  ```
+  ```
+  admin@sonic:~$ show suppress-fib-pending
+  Disabled
+  ```
+
 **show bgp device-global**
 
 This command displays BGP device global configuration.
@@ -2796,6 +2818,24 @@ This command is used to remove particular IPv4 or IPv6 BGP neighbor configuratio
   admin@sonic:~$ sudo config bgp remove neighbor SONIC02SPINE
   ```
 
+**config suppress-fib-pending**
+
+This command is used to enable or disable announcements of routes not yet installed in the HW.
+Once enabled, BGP will not advertise routes which aren't yet offloaded.
+
+- Usage:
+  ```
+  config suppress-fib-pending <enabled|disabled>
+  ```
+
+- Examples:
+  ```
+  admin@sonic:~$ sudo config suppress-fib-pending enabled
+  ```
+  ```
+  admin@sonic:~$ sudo config suppress-fib-pending disabled 
+  ```
+
 **config bgp device-global tsa/w-ecmp**
 
 This command is used to manage BGP device global configuration.
@@ -2859,7 +2899,7 @@ Optionally, you can display configured console ports only by specifying the `-b`
        1    9600         Enabled      -             -   switch1
   ```
 
-## Console config commands
+### Console config commands
 
 This sub-section explains the list of configuration options available for console management module.
 
@@ -3035,6 +3075,88 @@ Optionally, you can clear with a remote device name by specifying the `-d` or `-
 
 Go Back To [Beginning of the document](#) or [Beginning of this section](#console)
 
+### DPU serial console utility
+
+**dpu-tty.py**
+
+This command allows user to connect to a DPU serial console via TTY device with
+interactive CLI program: picocom. The configuration is from platform.json. The
+utility works only on smart switch that provides DPU UART connections through
+/dev/ttyS* devices.
+
+- Usage:
+  ```
+  dpu-tty.py (-n|--name) <DPU_NAME> [(-b|-baud) <BAUD_RATE>] [(-t|-tty) <TTY>]
+  ```
+
+- Example:
+  ```
+  root@MtFuji:/home/cisco# dpu-tty.py -n dpu0
+  picocom v3.1
+
+  port is        : /dev/ttyS4
+  flowcontrol    : none
+  baudrate is    : 115200
+  parity is      : none
+  databits are   : 8
+  stopbits are   : 1
+  escape is      : C-a
+  local echo is  : no
+  noinit is      : no
+  noreset is     : no
+  hangup is      : no
+  nolock is      : no
+  send_cmd is    : sz -vv
+  receive_cmd is : rz -vv -E
+  imap is        : 
+  omap is        : 
+  emap is        : crcrlf,delbs,
+  logfile is     : none
+  initstring     : none
+  exit_after is  : not set
+  exit is        : no
+
+  Type [C-a] [C-h] to see available commands
+  Terminal ready
+
+  sonic login: admin
+  Password: 
+  Linux sonic 6.1.0-11-2-arm64 #1 SMP Debian 6.1.38-4 (2023-08-08) aarch64
+  You are on
+    ____   ___  _   _ _  ____
+   / ___| / _ \| \ | (_)/ ___|
+   \___ \| | | |  \| | | |
+    ___) | |_| | |\  | | |___
+   |____/ \___/|_| \_|_|\____|
+
+  -- Software for Open Networking in the Cloud --
+
+  Unauthorized access and/or use are prohibited.
+  All access and/or use are subject to monitoring.
+
+  Help:    https://sonic-net.github.io/SONiC/
+
+  Last login: Mon Sep  9 21:39:44 UTC 2024 on ttyS0
+  admin@sonic:~$ 
+  Terminating...
+  Thanks for using picocom
+  root@MtFuji:/home/cisco#
+  ```
+
+Optionally, user may overwrite baud rate for experiment.
+
+- Example:
+  ```
+  root@MtFuji:/home/cisco# dpu-tty.py -n dpu1 -b 9600
+  ```
+
+Optionally, user may overwrite TTY device for experiment.
+
+- Example:
+  ```
+  root@MtFuji:/home/cisco# dpu-tty.py -n dpu2 -t ttyS4
+  ```
+
 ## CMIS firmware upgrade
 
 ### CMIS firmware version show commands
@@ -3178,19 +3300,19 @@ This command is the standard CMIS diagnostic control used for troubleshooting li
 
 - Usage:
   ```
-  sfputil debug loopback PORT_NAME LOOPBACK_MODE
+  sfputil debug loopback PORT_NAME LOOPBACK_MODE <enable/disable>
 
-  Set the loopback mode
+  Valid values for loopback mode
   host-side-input: host side input loopback mode
   host-side-output: host side output loopback mode
   media-side-input: media side input loopback mode
   media-side-output: media side output loopback mode
-  none: disable loopback mode
   ```
 
 - Example:
   ```
-  admin@sonic:~$ sfputil debug loopback Ethernet88 host-side-input
+  admin@sonic:~$ sfputil debug loopback Ethernet88 host-side-input enable
+  admin@sonic:~$ sfputil debug loopback Ethernet88 media-side-output disable
   ```
 
 ## DHCP Relay
@@ -4840,6 +4962,7 @@ Optional argument "-p" specify a period (in seconds) with which to gather counte
   show interfaces counters errors
   show interfaces counters rates
   show interfaces counters rif [-p|--period <period>] [-i <interface_name>]
+  show interfaces counters fec-histogram [-i <interface_name>]
   ```
 
 - Example:
@@ -4956,6 +5079,39 @@ Optionally, you can specify a period (in seconds) with which to gather counters 
   ```
   admin@sonic:~$ sonic-clear rifcounters
   ```
+
+The "fec-histogram" subcommand is used to display the fec histogram for the port.
+
+When data is transmitted, it's broken down into units called codewords. FEC algorithms add extra data to each codeword that can be used to detect and correct errors in transmission.
+In a FEC histogram, "bins" represent ranges of errors or specific categories of errors. For instance, Bin0 might represent codewords with no errors, while Bin1 could represent codewords with a single bit error, and so on. The histogram shows how many codewords fell into each bin. A high number in the higher bins might indicate a problem with the transmission link, such as signal degradation.
+
+- Example:
+  ```
+  admin@str-s6000-acs-11:/usr/bin$ show interface counters fec-histogram -i <PORT>
+
+Symbol Errors Per Codeword  Codewords
+--------------------------  ---------
+BIN0:                       1000000
+BIN1:                       900000
+BIN2:                       800000
+BIN3:                       700000
+BIN4:                       600000
+BIN5:                       500000
+BIN6:                       400000
+BIN7:                       300000
+BIN8:                       0
+BIN9:                       0
+BIN10:                      0
+BIN11:                      0
+BIN12:                      0
+BIN13:                      0
+BIN14:                      0
+BIN15:                      0
+
+   ```
+
+
+
 
 **show interfaces description**
 
