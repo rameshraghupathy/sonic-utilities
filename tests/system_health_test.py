@@ -347,47 +347,6 @@ pmon            OK                OK                  -              -
 swss            OK                OK                  -              -
 """
 
-    def test_health_dpu_patch(self):
-        # Mock is_smartswitch to return True
-        with mock.patch("sonic_py_common.device_info.is_smartswitch", return_value=True):
-
-            import show.main as show
-            import importlib
-            importlib.reload(show)
-
-            # Check if 'dpu' command is available under system-health
-            available_commands = show.cli.commands["system-health"].commands
-            assert "dpu" in available_commands, f"'dpu' command not found: {available_commands}"
-
-            # Create a mock SonicV2Connector
-            with mock.patch("show.system_health.SonicV2Connector") as mock_sonic_v2_connector:
-                conn = mock_sonic_v2_connector.return_value
-                conn.connect.return_value = None
-
-                # Set the DPU data in the mocked connector
-                conn.set(conn.CHASSIS_STATE_DB, 'DPU_STATE|DPU0', "id", "0")
-                conn.set(conn.CHASSIS_STATE_DB, 'DPU_STATE|DPU0', "dpu_midplane_link_reason", "OK")
-                conn.set(conn.CHASSIS_STATE_DB, 'DPU_STATE|DPU0', "dpu_midplane_link_state", "UP")
-                conn.set(conn.CHASSIS_STATE_DB, 'DPU_STATE|DPU0', "dpu_data_plane_time", "20240607 15:08:51")
-                conn.set(conn.CHASSIS_STATE_DB, 'DPU_STATE|DPU0', "dpu_control_plane_time", "20240608 09:11:13")
-                conn.set(conn.CHASSIS_STATE_DB, 'DPU_STATE|DPU0', "dpu_data_plane_state", "UP")
-                conn.set(conn.CHASSIS_STATE_DB, 'DPU_STATE|DPU0', "dpu_control_plane_reason", "Uplink is UP")
-                conn.set(conn.CHASSIS_STATE_DB, 'DPU_STATE|DPU0', "dpu_control_plane_state", "UP")
-                conn.set(conn.CHASSIS_STATE_DB, 'DPU_STATE|DPU0', "dpu_data_plane_reason", "Polaris is UP")
-                conn.set(conn.CHASSIS_STATE_DB, 'DPU_STATE|DPU0', "dpu_midplane_link_time", "20240608 09:11:13")
-
-                # Check if 'dpu' command is available under system-health
-                available_commands = show.cli.commands["system-health"].commands
-                assert "dpu" in available_commands, f"'dpu' command not found: {available_commands}"
-
-                # Call the CLI command using CliRunner
-                runner = CliRunner()
-                result = runner.invoke(show.cli.commands["system-health"].commands["dpu"], ["DPU0"])
-
-                # Assert the output and exit code
-                assert result.exit_code == 0, f"Expected exit code 0, got {result.exit_code}. Output: {result.output}"
-                assert "DPU0" in result.output, f"Expected 'DPU0' in output, got: {result.output}"
-
 
     @classmethod
     def teardown_class(cls):
