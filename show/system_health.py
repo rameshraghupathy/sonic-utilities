@@ -226,14 +226,11 @@ def populate_row(row, key, value, table):
     if key.endswith('_state'):
         row[2] = key
         row[3] = value
-        if "up" in row[3]:
-            row[5] = ""
         table.append(row)
     elif key.endswith('_time'):
         row[4] = value
     elif key.endswith('_reason'):
-        if "up" not in row[3]:
-            row[5] = value
+        row[5] = value
 
 
 @system_health.command()
