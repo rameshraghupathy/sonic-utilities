@@ -2,7 +2,7 @@ import click
 from natsort import natsorted
 from tabulate import tabulate
 from swsscommon.swsscommon import SonicV2Connector
-from utilities_common.chassis import is_smartswitch
+from utilities_common.chassis import is_smartswitch, get_passwordless_ssh_state, get_all_dpus
 
 import utilities_common.cli as clicommon
 from sonic_py_common import multi_asic
@@ -77,6 +77,50 @@ def status(db, chassis_module_name):
         click.echo(tabulate(table, header, tablefmt='simple', stralign='right'))
     else:
         click.echo('No data available in CHASSIS_MODULE_TABLE\n')
+
+# CLI command to show passwordless SSH state
+@modules.command()
+@click.argument('chassis_module_name', metavar='<module_name>', required=False)
+def passwordless_ssh_state(chassis_module_name):
+    """Show passwordless SSH state for each DPU"""
+    click.echo("Fetching passwordless SSH state and operational status for DPUs...")
+
+    # Get the list of DPUs
+    dpu_list = get_all_dpus()
+
+    # Store DPU status in a list of dictionaries
+    dpu_status = []
+    
+    # Connect to the state database
+    state_db = SonicV2Connector(host="127.0.0.1")
+    state_db.connect(state_db.STATE_DB)
+
+    # Iterate over each DPU and fetch its passwordless SSH state and operational status
+    for dpu in dpu_list:
+        key = "CHASSIS_MODULE_TABLE|" + dpu
+        # Get the operational status
+        oper_status = state_db.get(state_db.STATE_DB, key, "oper_status")
+        
+        # Get the DPU's IP address
+        key = "CHASSIS_MIDPLANE_TABLE|" + dpu
+        ip = state_db.get(state_db.STATE_DB, key, "ip_address")
+        
+        # Get the passwordless SSH state
+        if oper_status == 'Offline':
+            passwordless_state = 'Disabled' 
+        else:
+            passwordless_state = get_passwordless_ssh_state(ip)
+        
+        # Append the status to the list
+        dpu_status.append({
+            "DPU": dpu,
+            'IP': ip,
+            "Passwordless SSH": passwordless_state,
+            "Operational Status": oper_status
+        })
+
+    # Format the output as a table using a list of dictionaries
+    click.echo(tabulate(dpu_status, headers="keys", tablefmt='simple', stralign='right'))
 
 @modules.command()
 @click.argument('chassis_module_name', metavar='<module_name>', required=False)

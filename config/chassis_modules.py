@@ -5,7 +5,7 @@ import time
 import re
 import subprocess
 import utilities_common.cli as clicommon
-from utilities_common.chassis import is_smartswitch, get_all_dpus
+from utilities_common.chassis import is_smartswitch, get_all_dpus, get_all_dpu_options, enable_dpu_passwordless_ssh, write_credentials, disable_dpu_passwordless_ssh, remove_password_file
 
 TIMEOUT_SECS = 10
 
@@ -122,6 +122,9 @@ def shutdown_chassis_module(db, chassis_module_name):
        not chassis_module_name.startswith("DPU"):
         ctx.fail("'module_name' has to begin with 'SUPERVISOR', 'LINE-CARD', 'FABRIC-CARD', 'DPU'")
 
+    # Disable dpu passwordless ssh if enabled 
+    disable_dpu_passwordless_ssh(chassis_module_name)
+
     # To avoid duplicate operation
     if get_config_module_state(db, chassis_module_name) == 'down':
         click.echo("Module {} is already in down state".format(chassis_module_name))
@@ -133,6 +136,62 @@ def shutdown_chassis_module(db, chassis_module_name):
     if chassis_module_name.startswith("FABRIC-CARD"):
         if not check_config_module_state_with_timeout(ctx, db, chassis_module_name, 'down'):
             fabric_module_set_admin_status(db, chassis_module_name, 'down')
+
+
+#
+# 'enable_passwordless_ssh' subcommand ('config chassis_modules enable_passwordless_ssh ...')
+#
+@modules.command('enable_passwordless_ssh')
+@clicommon.pass_db
+@click.argument('chassis_module_name',
+                metavar='<module_name>',
+                required=True,
+                type=click.Choice(get_all_dpu_options(), case_sensitive=False) if is_smartswitch() else str
+                )
+@click.option('--username', prompt=False, help='The username for authentication')
+@click.option('--password', prompt=False, hide_input=True, help='The password for authentication')
+def enable_passwordless_ssh(db, chassis_module_name, username, password):
+    """Enable passwordless SSH for DPUs"""
+    if not is_smartswitch():
+        return
+
+    click.echo(f"Enabling dpu_passwordless_ssh for {chassis_module_name}")
+
+    # Save username/password if provided
+    if username and password:
+        write_credentials(username, password)
+
+    dpu_list = get_all_dpus()
+
+    if chassis_module_name == 'all':
+        for dpu in dpu_list:
+            enable_dpu_passwordless_ssh(dpu)
+    else:
+        enable_dpu_passwordless_ssh(chassis_module_name)
+
+@modules.command('disable_passwordless_ssh')
+@clicommon.pass_db
+@click.argument('chassis_module_name', metavar='<module_name>', required=True)
+def disable_passwordless_ssh(db, chassis_module_name):
+    """Disable passwordless SSH for DPUs"""
+    if not is_smartswitch():
+        return
+
+    click.echo(f"Disabling passwordless SSH for {chassis_module_name}")
+
+    dpu_list = get_all_dpus()
+
+    if chassis_module_name == 'all':
+        # If 'all' is specified, remove passwordless SSH from all DPUs and delete the password file
+        click.echo("Disabling passwordless SSH for all DPUs and removing the password file...")
+        for dpu in dpu_list:
+            disable_dpu_passwordless_ssh(dpu)
+        # Now remove the password file after disabling SSH for all DPUs
+        remove_password_file()
+    else:
+        # Otherwise, disable passwordless SSH for the specific DPU
+        disable_dpu_passwordless_ssh(chassis_module_name)
+        click.echo(f"Passwordless SSH disabled for {chassis_module_name}")
 
 #
 # 'startup' subcommand ('config chassis_modules startup ...')
