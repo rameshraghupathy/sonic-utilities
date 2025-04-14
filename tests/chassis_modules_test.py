@@ -451,14 +451,14 @@ class TestChassisModules(object):
 
         # Simulate a timed-out state transition
         transition_start = datetime.utcnow() - TRANSITION_TIMEOUT - timedelta(seconds=10)
-        db.cfgdb.set_entry('CHASSIS_MODULE', 'LINE-CARD0', {
+        db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
             'state_transition_in_progress': 'True',
             'transition_start_time': transition_start.isoformat()
         })
 
         result = runner.invoke(
             config.config.commands["chassis"].commands["modules"].commands["shutdown"],
-            ["LINE-CARD0"],
+            ["DPU0"],
             obj=db
         )
 
@@ -472,14 +472,14 @@ class TestChassisModules(object):
         db = Db()
 
         # Simulate a state transition still in progress and not timed out
-        db.cfgdb.set_entry('CHASSIS_MODULE', 'LINE-CARD0', {
+        db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
             'state_transition_in_progress': 'True',
             'transition_start_time': datetime.utcnow().isoformat()
         })
 
         result = runner.invoke(
             config.config.commands["chassis"].commands["modules"].commands["shutdown"],
-            ["LINE-CARD0"],
+            ["DPU0"],
             obj=db
         )
 
