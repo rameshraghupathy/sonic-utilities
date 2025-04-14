@@ -7,7 +7,6 @@ import show.main as show
 import config.main as config
 import tests.mock_tables.dbconnector
 from utilities_common.db import Db
-from utilities_common.chassis import is_smartswitch
 from .utils import get_result_and_return_code
 from unittest import mock
 sys.modules['clicommon'] = mock.Mock()
