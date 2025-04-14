@@ -1,14 +1,18 @@
 import sys
 import os
 from click.testing import CliRunner
+from datetime import datetime, timedelta
 
 import show.main as show
 import config.main as config
 import tests.mock_tables.dbconnector
 from utilities_common.db import Db
+from utilities_common.chassis import is_smartswitch
 from .utils import get_result_and_return_code
 from unittest import mock
 sys.modules['clicommon'] = mock.Mock()
+
+TRANSITION_TIMEOUT = timedelta(seconds=60)
 
 show_linecard0_shutdown_output="""\
 LINE-CARD0 line-card 1 Empty down LC1000101
@@ -441,7 +445,7 @@ class TestChassisModules(object):
         assert return_code == 0
         assert result == show_chassis_system_lags_output_lc4
 
-    @mock.patch('config.main.is_smartswitch', return_value=True)
+    @mock.patch('utilities_common.chassis.is_smartswitch', return_value=True)
     def test_shutdown_with_timed_out_transition(self, mock_smartswitch):
         runner = CliRunner()
         db = Db()
@@ -463,7 +467,7 @@ class TestChassisModules(object):
         assert "timed out" in result.output
         assert result.exit_code == 0
 
-    @mock.patch('config.main.is_smartswitch', return_value=True)
+    @mock.patch('utilities_common.chassis.is_smartswitch', return_value=True)
     def test_shutdown_with_transition_in_progress_not_timed_out(self, mock_smartswitch):
         runner = CliRunner()
         db = Db()
