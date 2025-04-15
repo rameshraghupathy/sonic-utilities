@@ -10,8 +10,6 @@ from .utils import get_result_and_return_code
 from unittest import mock
 sys.modules['clicommon'] = mock.Mock()
 
-TRANSITION_TIMEOUT = timedelta(seconds=60)
-
 show_linecard0_shutdown_output="""\
 LINE-CARD0 line-card 1 Empty down LC1000101
 """
