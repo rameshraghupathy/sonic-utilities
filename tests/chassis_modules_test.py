@@ -142,10 +142,18 @@ class FakeConfigDBConnector:
         self.tables = {}
 
     def set_entry(self, table, key, value):
-        self.tables.setdefault(table, {})[key] = value
+        print(f"DEBUG: set_entry(table={table}, key={key}, value={value})")
+
+        self.tables.setdefault(table, {})
+        # Ensure existing entry is preserved and merged
+        if key not in self.tables[table]:
+            self.tables[table][key] = {}
+        self.tables[table][key].update(value)
 
     def get_entry(self, table, key):
-        return self.tables.get(table, {}).get(key, {})
+        value = self.tables.get(table, {}).get(key, {})
+        print(f"DEBUG: get_entry(table={table}, key={key}) => {value}")
+        return value
 
     def get_table(self, table):
         return self.tables.get(table, {})
@@ -463,67 +471,7 @@ class TestChassisModules(object):
         assert result == show_chassis_system_lags_output_lc4
 
     def test_shutdown_triggers_transition_tracking(self):
-        with mock.patch("utilities_common.chassis.is_smartswitch", return_value=True), \
-             mock.patch("config.chassis_modules.get_config_module_state", return_value='up'):
-
-            db = FakeDb()
-            runner = CliRunner()
-
-            db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
-                'admin_status': 'up'
-            })
-
-            result = runner.invoke(
-                config.config.commands["chassis"].commands["modules"].commands["shutdown"],
-                ["DPU0"],
-                obj=db
-            )
-
-            print("1: CLI Output:", result.output)
-            fvs = db.cfgdb.get_entry("CHASSIS_MODULE", "DPU0")
-            print("1: fvs:", fvs)
-
-        with mock.patch("utilities_common.chassis.is_smartswitch", return_value=True):
-            with mock.patch("config.chassis_modules.get_config_module_state", return_value='up'):
-
-                db = FakeDb()
-                runner = CliRunner()
-
-                db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
-                    'admin_status': 'up'
-                })
-
-                result = runner.invoke(
-                    config.config.commands["chassis"].commands["modules"].commands["shutdown"],
-                    ["DPU0"],
-                    obj=db
-                )
-
-                print("2: CLI Output:", result.output)
-                fvs = db.cfgdb.get_entry("CHASSIS_MODULE", "DPU0")
-                print("2: fvs:", fvs)
-
-        with mock.patch("sonic_py_common.device_info.is_smartswitch", return_value=True):
-            with mock.patch("config.chassis_modules.get_config_module_state", return_value='up'):
-
-                db = FakeDb()
-                runner = CliRunner()
-
-                db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
-                    'admin_status': 'up'
-                })
-
-                result = runner.invoke(
-                    config.config.commands["chassis"].commands["modules"].commands["shutdown"],
-                    ["DPU0"],
-                    obj=db
-                )
-
-                print("3: CLI Output:", result.output)
-                fvs = db.cfgdb.get_entry("CHASSIS_MODULE", "DPU0")
-                print("3: fvs:", fvs)
-
-        with mock.patch("sonic_py_common.device_info.is_smartswitch", return_value=True), \
+        with mock.patch("config.chassis_modules.is_smartswitch", return_value=True), \
              mock.patch("config.chassis_modules.get_config_module_state", return_value='up'):
 
             db = FakeDb()
@@ -541,7 +489,7 @@ class TestChassisModules(object):
 
             print("CLI Output:", result.output)
             fvs = db.cfgdb.get_entry("CHASSIS_MODULE", "DPU0")
-            print("fvs:", fvs)
+            print("Final FVS:", fvs)
 
             assert result.exit_code == 0
             assert fvs.get("admin_status") == "down"
