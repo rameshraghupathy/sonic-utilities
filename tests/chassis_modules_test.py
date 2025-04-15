@@ -482,7 +482,8 @@ class TestChassisModules(object):
             runner = CliRunner()
 
             db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
-                'admin_status': 'up'
+                'admin_status': 'up',
+                'state_transition_in_progress': 'False'
             })
 
             result = runner.invoke(
