@@ -155,7 +155,7 @@ class FakeConfigDBConnector:
 
 class FakeDb:
     def __init__(self):
-        self.cfg_db = FakeConfigDBConnector()
+        self.cfgdb = FakeConfigDBConnector()
 
 
 class TestChassisModules(object):
