@@ -137,6 +137,27 @@ def mock_run_command_side_effect(*args, **kwargs):
         return '', 0
 
 
+class FakeConfigDBConnector:
+    def __init__(self):
+        self.tables = {}
+
+    def set_entry(self, table, key, value):
+        if table not in self.tables:
+            self.tables[table] = {}
+        self.tables[table][key] = value
+
+    def get_entry(self, table, key):
+        return self.tables.get(table, {}).get(key, {})
+
+    def get_table(self, table):
+        return self.tables.get(table, {})
+
+
+class FakeDb:
+    def __init__(self):
+        self.cfg_db = FakeConfigDBConnector()
+
+
 class TestChassisModules(object):
     @classmethod
     def setup_class(cls):
@@ -445,7 +466,7 @@ class TestChassisModules(object):
 
     @mock.patch("utilities_common.chassis.is_smartswitch", return_value=True)
     def test_shutdown_triggers_transition_tracking(self, mock_smartswitch):
-        db = Db()
+        db = FakeDb()
         runner = CliRunner()
 
         # Ensure module is not already 'down'
@@ -473,7 +494,7 @@ class TestChassisModules(object):
 
     @mock.patch("utilities_common.chassis.is_smartswitch", return_value=True)
     def test_shutdown_skips_if_transition_in_progress_not_timed_out(self, mock_smartswitch):
-        db = Db()
+        db = FakeDb()
         runner = CliRunner()
 
         transition_start_time = datetime.utcnow().isoformat()
@@ -494,7 +515,7 @@ class TestChassisModules(object):
 
     @mock.patch("utilities_common.chassis.is_smartswitch", return_value=True)
     def test_shutdown_resets_if_transition_timed_out(self, mock_smartswitch):
-        db = Db()
+        db = FakeDb()
         runner = CliRunner()
 
         timeout_start = (datetime.utcnow() - TRANSITION_TIMEOUT - timedelta(seconds=5)).isoformat()
