@@ -442,26 +442,32 @@ class TestChassisModules(object):
         assert result == show_chassis_system_lags_output_lc4
 
     @mock.patch("utilities_common.chassis.is_smartswitch", return_value=True)
-    def test_shutdown_triggers_transition_tracking(self, mock_smartswitch):
+    def test_shutdown_triggers_transition_tracking(mock_smartswitch):
         db = Db()
         runner = CliRunner()
 
-        # Prepopulate with a module in "up" state to trigger shutdown logic
+        # Ensure module is not already 'down'
+        # and no transition is in progress
         db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
-            'admin_status': 'up'
+            'admin_status': 'up',
+            'state_transition_in_progress': 'False'
         })
 
         result = runner.invoke(
-            config.config.commands["chassis"].commands["modules"].commands["shutdown"],
+            config.commands["chassis"].commands["modules"].commands["shutdown"],
             ["DPU0"],
             obj=db
         )
 
+        print("CLI Output:", result.output)
+        assert result.exit_code == 0, "CLI failed unexpectedly"
+
         fvs = db.cfgdb.get_entry('CHASSIS_MODULE', 'DPU0')
-        assert fvs['admin_status'] == 'down'
-        assert fvs['state_transition_in_progress'] == 'True'
+
+        # Check that shutdown updated the DB as expected
+        assert fvs.get('admin_status') == 'down'
+        assert fvs.get('state_transition_in_progress') == 'True'
         assert 'transition_start_time' in fvs
-        assert result.exit_code == 0
 
     @classmethod
     def teardown_class(cls):
