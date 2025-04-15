@@ -139,24 +139,28 @@ def mock_run_command_side_effect(*args, **kwargs):
 
 class FakeConfigDBConnector:
     def __init__(self):
-        self.tables = {}
+        self.data = {}
 
     def set_entry(self, table, key, value):
-        print(f"DEBUG: set_entry(table={table}, key={key}, value={value})")
-
-        self.tables.setdefault(table, {})
-        # Ensure existing entry is preserved and merged
-        if key not in self.tables[table]:
-            self.tables[table][key] = {}
-        self.tables[table][key].update(value)
+        full_key = f"{table}|{key}"
+        print(f"[SET] {full_key} = {value}")
+        existing = self.data.get(full_key, {})
+        existing.update(value)
+        self.data[full_key] = existing
 
     def get_entry(self, table, key):
-        value = self.tables.get(table, {}).get(key, {})
-        print(f"DEBUG: get_entry(table={table}, key={key}) => {value}")
+        full_key = f"{table}|{key}"
+        value = self.data.get(full_key, {})
+        print(f"[GET] {full_key} => {value}")
         return value
 
     def get_table(self, table):
-        return self.tables.get(table, {})
+        result = {}
+        for full_key, val in self.data.items():
+            if full_key.startswith(f"{table}|"):
+                _, key = full_key.split('|', 1)
+                result[key] = val
+        return result
 
 
 class FakeDb:
