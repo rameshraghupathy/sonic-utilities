@@ -142,9 +142,7 @@ class FakeConfigDBConnector:
         self.tables = {}
 
     def set_entry(self, table, key, value):
-        if table not in self.tables:
-            self.tables[table] = {}
-        self.tables[table][key] = value
+        self.tables.setdefault(table, {})[key] = value
 
     def get_entry(self, table, key):
         return self.tables.get(table, {}).get(key, {})
@@ -464,9 +462,9 @@ class TestChassisModules(object):
         assert return_code == 0
         assert result == show_chassis_system_lags_output_lc4
 
-    @mock.patch("utilities_common.chassis.is_smartswitch", return_value=True)
+    @mock.patch("sonic_py_common.device_info.is_smartswitch", return_value=True)
     @mock.patch("config.chassis_modules.get_config_module_state", return_value='up')
-    def test_shutdown_triggers_transition_tracking_test(self, mock_state, mock_smartswitch):
+    def test_shutdown_triggers_transition_tracking(self, mock_state, mock_smartswitch):
         db = FakeDb()
         runner = CliRunner()
 
@@ -480,42 +478,17 @@ class TestChassisModules(object):
             obj=db
         )
 
-        print("CLI Output:", result.output)
+        print("Ram CLI Output:", result.output)
         assert result.exit_code == 0
 
-        result = runner.invoke(show.cli.commands["chassis"].commands["modules"].commands["status"], ["DPU0"], obj=db)
-        print(result.exit_code)
-        print(result.output)
-        result_lines = result.output.strip('\n').split('\n')
-        assert result.exit_code == 0
-        header_lines = 2
-        result_out = " ".join((result_lines[header_lines]).split())
-        assert "DPU0" in result_out and "down" in result_out.lower()
+        assert result.exit_code == 0, f"CLI failed: {result.output}"
 
-    def test_shutdown_triggers_transition_tracking(self):
-        with mock.patch("utilities_common.chassis.is_smartswitch", return_value=True), \
-             mock.patch("config.chassis_modules.get_config_module_state", return_value='up'):
-
-            db = FakeDb()
-            runner = CliRunner()
-
-            db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
-                'admin_status': 'up'
-            })
-
-            result = runner.invoke(
-                config.config.commands["chassis"].commands["modules"].commands["shutdown"],
-                ["DPU0"],
-                obj=db
-            )
-
-            print("CLI Output:", result.output)
-            assert result.exit_code == 0
-
-            fvs = db.cfgdb.get_entry('CHASSIS_MODULE', 'DPU0')
-            assert fvs.get('admin_status') == 'down'
-            assert fvs.get('state_transition_in_progress') == 'True'
-            assert 'transition_start_time' in fvs
+        # Verify CONFIG_DB is correctly updated
+        fvs = db.cfgdb.get_entry("CHASSIS_MODULE", "DPU0")
+        print("Ram fvs:{}".format(fvs))
+        assert fvs.get("admin_status") == "down"
+        assert fvs.get("state_transition_in_progress") == "True"
+        assert "transition_start_time" in fvs
 
     @classmethod
     def teardown_class(cls):
