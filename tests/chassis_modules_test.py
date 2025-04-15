@@ -142,6 +142,7 @@ class FakeConfigDBConnector:
         self.data = {}
 
     def set_entry(self, table, key, value):
+        print(f"[SET] called on id={id(self)}: {table}|{key} = {value}")
         full_key = f"{table}|{key}"
         print(f"[SET] {full_key} = {value}")
         existing = self.data.get(full_key, {})
@@ -500,6 +501,33 @@ class TestChassisModules(object):
             assert fvs.get("admin_status") == "down"
             assert fvs.get("state_transition_in_progress") == "True"
             assert "transition_start_time" in fvs
+
+    @mock.patch("config.chassis_modules.ConfigDBConnector", return_value=FakeConfigDBConnector())
+    @mock.patch("config.chassis_modules.is_smartswitch", return_value=True)
+    @mock.patch("config.chassis_modules.get_config_module_state", return_value='up')
+    def test_shutdown_triggers_transition_tracking_test(self, mock_state, mock_smartswitch, mock_cfg):
+        db = FakeDb()
+        runner = CliRunner()
+
+        db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
+            'admin_status': 'up',
+            'state_transition_in_progress': 'False'
+        })
+
+        result = runner.invoke(
+            config.config.commands["chassis"].commands["modules"].commands["shutdown"],
+            ["DPU0"],
+            obj=db
+        )
+
+        print("CLI Output:", result.output)
+        fvs = db.cfgdb.get_entry("CHASSIS_MODULE", "DPU0")
+        print("Final FVS:", fvs)
+
+        assert result.exit_code == 0
+        assert fvs.get("admin_status") == "down"
+        assert fvs.get("state_transition_in_progress") == "True"
+        assert "transition_start_time" in fvs
 
     @classmethod
     def teardown_class(cls):

@@ -169,6 +169,7 @@ def shutdown_chassis_module(db, chassis_module_name):
                 return
 
         click.echo(f"Smartswitch: Shutting down chassis module {chassis_module_name}")
+        click.echo(f"DEBUG: Using cfgdb ID: {id(config_db)}")
         fvs = {
             'admin_status': 'down',
             'state_transition_in_progress': 'True',
