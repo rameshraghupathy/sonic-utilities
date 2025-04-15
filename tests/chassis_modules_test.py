@@ -446,6 +446,11 @@ class TestChassisModules(object):
         db = Db()
         runner = CliRunner()
 
+        # Prepopulate with a module in "up" state to trigger shutdown logic
+        db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
+            'admin_status': 'up'
+        })
+
         result = runner.invoke(
             config.config.commands["chassis"].commands["modules"].commands["shutdown"],
             ["DPU0"],
