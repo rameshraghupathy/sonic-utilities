@@ -465,11 +465,11 @@ class TestChassisModules(object):
         assert result == show_chassis_system_lags_output_lc4
 
     @mock.patch("utilities_common.chassis.is_smartswitch", return_value=True)
-    def test_shutdown_triggers_transition_tracking(self, mock_smartswitch):
+    @mock.patch("config.chassis_modules.get_config_module_state", return_value='up')
+    def test_shutdown_triggers_transition_tracking(self, mock_state, mock_smartswitch):
         db = FakeDb()
         runner = CliRunner()
 
-        # Initial state: module is up, no transition yet
         db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
             'admin_status': 'up'
         })
@@ -484,7 +484,6 @@ class TestChassisModules(object):
         assert result.exit_code == 0
 
         fvs = db.cfgdb.get_entry('CHASSIS_MODULE', 'DPU0')
-        print(f"Final state: {fvs}")
         assert fvs.get('admin_status') == 'down'
         assert fvs.get('state_transition_in_progress') == 'True'
         assert 'transition_start_time' in fvs
