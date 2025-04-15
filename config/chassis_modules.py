@@ -164,7 +164,7 @@ def shutdown_chassis_module(db, chassis_module_name):
                 click.echo(f"Module {chassis_module_name} state transition is already in progress")
                 return
 
-        click.echo(f"Shutting down chassis module {chassis_module_name}")
+        click.echo(f"Smartswitch: Shutting down chassis module {chassis_module_name}")
         fvs = {
             'admin_status': 'down',
             'state_transition_in_progress': 'True',
@@ -172,7 +172,7 @@ def shutdown_chassis_module(db, chassis_module_name):
         }
         config_db.set_entry('CHASSIS_MODULE', chassis_module_name, fvs)
     else:
-        click.echo(f"Shutting down chassis module {chassis_module_name}")
+        click.echo(f"Non-Smartswitch: Shutting down chassis module {chassis_module_name}")
         config_db.set_entry('CHASSIS_MODULE', chassis_module_name, {'admin_status': 'down'})
 
     if chassis_module_name.startswith("FABRIC-CARD"):
