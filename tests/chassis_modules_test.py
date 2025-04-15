@@ -492,30 +492,30 @@ class TestChassisModules(object):
         result_out = " ".join((result_lines[header_lines]).split())
         assert "DPU0" in result_out and "down" in result_out.lower()
 
-def test_shutdown_triggers_transition_tracking(self):
-    with mock.patch("utilities_common.chassis.is_smartswitch", return_value=True), \
-         mock.patch("config.chassis_modules.get_config_module_state", return_value='up'):
-        
-        db = FakeDb()
-        runner = CliRunner()
+    def test_shutdown_triggers_transition_tracking(self):
+        with mock.patch("utilities_common.chassis.is_smartswitch", return_value=True), \
+            mock.patch("config.chassis_modules.get_config_module_state", return_value='up'):
+            
+            db = FakeDb()
+            runner = CliRunner()
 
-        db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
-            'admin_status': 'up'
-        })
+            db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
+                'admin_status': 'up'
+            })
 
-        result = runner.invoke(
-            config.config.commands["chassis"].commands["modules"].commands["shutdown"],
-            ["DPU0"],
-            obj=db
-        )
+            result = runner.invoke(
+                config.config.commands["chassis"].commands["modules"].commands["shutdown"],
+                ["DPU0"],
+                obj=db
+            )
 
-        print("CLI Output:", result.output)
-        assert result.exit_code == 0
+            print("CLI Output:", result.output)
+            assert result.exit_code == 0
 
-        fvs = db.cfgdb.get_entry('CHASSIS_MODULE', 'DPU0')
-        assert fvs.get('admin_status') == 'down'
-        assert fvs.get('state_transition_in_progress') == 'True'
-        assert 'transition_start_time' in fvs
+            fvs = db.cfgdb.get_entry('CHASSIS_MODULE', 'DPU0')
+            assert fvs.get('admin_status') == 'down'
+            assert fvs.get('state_transition_in_progress') == 'True'
+            assert 'transition_start_time' in fvs
 
     @classmethod
     def teardown_class(cls):
