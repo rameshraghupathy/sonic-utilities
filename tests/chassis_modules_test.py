@@ -462,33 +462,31 @@ class TestChassisModules(object):
         assert return_code == 0
         assert result == show_chassis_system_lags_output_lc4
 
-    @mock.patch("sonic_py_common.device_info.is_smartswitch", return_value=True)
-    @mock.patch("config.chassis_modules.get_config_module_state", return_value='up')
-    def test_shutdown_triggers_transition_tracking(self, mock_state, mock_smartswitch):
-        db = FakeDb()
-        runner = CliRunner()
+    def test_shutdown_triggers_transition_tracking(self):
+        with mock.patch("sonic_py_common.device_info.is_smartswitch", return_value=True), \
+            mock.patch("config.chassis_modules.get_config_module_state", return_value='up'):
 
-        db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
-            'admin_status': 'up'
-        })
+            db = FakeDb()
+            runner = CliRunner()
 
-        result = runner.invoke(
-            config.config.commands["chassis"].commands["modules"].commands["shutdown"],
-            ["DPU0"],
-            obj=db
-        )
+            db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
+                'admin_status': 'up'
+            })
 
-        print("Ram CLI Output:", result.output)
-        assert result.exit_code == 0
+            result = runner.invoke(
+                config.config.commands["chassis"].commands["modules"].commands["shutdown"],
+                ["DPU0"],
+                obj=db
+            )
 
-        assert result.exit_code == 0, f"CLI failed: {result.output}"
+            print("CLI Output:", result.output)
+            fvs = db.cfgdb.get_entry("CHASSIS_MODULE", "DPU0")
+            print("fvs:", fvs)
 
-        # Verify CONFIG_DB is correctly updated
-        fvs = db.cfgdb.get_entry("CHASSIS_MODULE", "DPU0")
-        print("Ram fvs:{}".format(fvs))
-        assert fvs.get("admin_status") == "down"
-        assert fvs.get("state_transition_in_progress") == "True"
-        assert "transition_start_time" in fvs
+            assert result.exit_code == 0
+            assert fvs.get("admin_status") == "down"
+            assert fvs.get("state_transition_in_progress") == "True"
+            assert "transition_start_time" in fvs
 
     @classmethod
     def teardown_class(cls):
