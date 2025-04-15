@@ -1,7 +1,6 @@
 import sys
 import os
 from click.testing import CliRunner
-from datetime import datetime, timedelta
 
 import show.main as show
 import config.main as config
