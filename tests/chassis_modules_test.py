@@ -447,7 +447,7 @@ class TestChassisModules(object):
         runner = CliRunner()
 
         result = runner.invoke(
-            config.commands["chassis"].commands["modules"].commands["shutdown"],
+            config.config.commands["chassis"].commands["modules"].commands["shutdown"],
             ["DPU0"],
             obj=db
         )
