@@ -38,9 +38,10 @@ def get_config_module_state(db, chassis_module_name):
 
 
 def get_state_transition_in_progress(db, chassis_module_name):
-    config_db = db.cfgdb
-    fvs = config_db.get_entry('CHASSIS_MODULE', chassis_module_name)
-    return fvs.get('state_transition_in_progress', 'False') if fvs else 'False'
+    fvs = db.cfgdb.get_entry('CHASSIS_MODULE', chassis_module_name)
+    value = fvs.get('state_transition_in_progress', 'False') if fvs else 'False'
+    print(f"[STATE CHECK] state_transition_in_progress = {value}")
+    return value
 
 
 def set_state_transition_in_progress(db, chassis_module_name, value):
@@ -157,10 +158,13 @@ def shutdown_chassis_module(db, chassis_module_name):
 
     if is_smartswitch():
         if get_state_transition_in_progress(db, chassis_module_name) == 'True':
+            click.echo("DEBUG: Transition in progress is TRUE")
             if is_transition_timed_out(db, chassis_module_name):
+                click.echo("DEBUG: Transition timed out — continuing shutdown")
                 set_state_transition_in_progress(db, chassis_module_name, 'False')
                 click.echo(f"Previous transition for module {chassis_module_name} timed out. Proceeding with shutdown.")
             else:
+                click.echo("DEBUG: Transition not timed out — exiting")
                 click.echo(f"Module {chassis_module_name} state transition is already in progress")
                 return
 
