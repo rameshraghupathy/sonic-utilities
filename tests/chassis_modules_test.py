@@ -466,7 +466,36 @@ class TestChassisModules(object):
 
     @mock.patch("utilities_common.chassis.is_smartswitch", return_value=True)
     @mock.patch("config.chassis_modules.get_config_module_state", return_value='up')
-    def test_shutdown_triggers_transition_tracking(self, mock_state, mock_smartswitch):
+    def test_shutdown_triggers_transition_tracking_test(self, mock_state, mock_smartswitch):
+        db = FakeDb()
+        runner = CliRunner()
+
+        db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
+            'admin_status': 'up'
+        })
+
+        result = runner.invoke(
+            config.config.commands["chassis"].commands["modules"].commands["shutdown"],
+            ["DPU0"],
+            obj=db
+        )
+
+        print("CLI Output:", result.output)
+        assert result.exit_code == 0
+
+        result = runner.invoke(show.cli.commands["chassis"].commands["modules"].commands["status"], ["DPU0"], obj=db)
+        print(result.exit_code)
+        print(result.output)
+        result_lines = result.output.strip('\n').split('\n')
+        assert result.exit_code == 0
+        header_lines = 2
+        result_out = " ".join((result_lines[header_lines]).split())
+        assert "DPU0" in result_out and "down" in result_out.lower()
+
+def test_shutdown_triggers_transition_tracking(self):
+    with mock.patch("utilities_common.chassis.is_smartswitch", return_value=True), \
+         mock.patch("config.chassis_modules.get_config_module_state", return_value='up'):
+        
         db = FakeDb()
         runner = CliRunner()
 
