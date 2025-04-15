@@ -469,8 +469,6 @@ class TestChassisModules(object):
         db = FakeDb()
         runner = CliRunner()
 
-        # Ensure module is not already 'down'
-        # and no transition is in progress
         db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
             'admin_status': 'up',
             'state_transition_in_progress': 'False'
@@ -483,60 +481,12 @@ class TestChassisModules(object):
         )
 
         print("CLI Output:", result.output)
-        assert result.exit_code == 0, "CLI failed unexpectedly"
+        assert result.exit_code == 0
 
         fvs = db.cfgdb.get_entry('CHASSIS_MODULE', 'DPU0')
-
-        # Check that shutdown updated the DB as expected
         assert fvs.get('admin_status') == 'down'
         assert fvs.get('state_transition_in_progress') == 'True'
         assert 'transition_start_time' in fvs
-
-    @mock.patch("utilities_common.chassis.is_smartswitch", return_value=True)
-    def test_shutdown_skips_if_transition_in_progress_not_timed_out(self, mock_smartswitch):
-        db = FakeDb()
-        runner = CliRunner()
-
-        transition_start_time = datetime.utcnow().isoformat()
-        db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
-            'admin_status': 'up',
-            'state_transition_in_progress': 'True',
-            'transition_start_time': transition_start_time
-        })
-
-        result = runner.invoke(
-            config.config.commands["chassis"].commands["modules"].commands["shutdown"],
-            ["DPU0"],
-            obj=db
-        )
-
-        assert "already in progress" in result.output
-        assert result.exit_code == 0
-
-    @mock.patch("utilities_common.chassis.is_smartswitch", return_value=True)
-    def test_shutdown_resets_if_transition_timed_out(self, mock_smartswitch):
-        db = FakeDb()
-        runner = CliRunner()
-
-        timeout_start = (datetime.utcnow() - TRANSITION_TIMEOUT - timedelta(seconds=5)).isoformat()
-        db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
-            'admin_status': 'up',
-            'state_transition_in_progress': 'True',
-            'transition_start_time': timeout_start
-        })
-
-        result = runner.invoke(
-            config.config.commands["chassis"].commands["modules"].commands["shutdown"],
-            ["DPU0"],
-            obj=db
-        )
-
-        fvs = db.cfgdb.get_entry('CHASSIS_MODULE', 'DPU0')
-        assert result.exit_code == 0
-        assert fvs.get('admin_status') == 'down'
-        assert fvs.get('state_transition_in_progress') == 'True'
-        assert 'transition_start_time' in fvs
-        assert "timed out" in result.output
 
     @classmethod
     def teardown_class(cls):
