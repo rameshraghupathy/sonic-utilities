@@ -464,7 +464,7 @@ class TestChassisModules(object):
 
     def test_shutdown_triggers_transition_tracking(self):
         with mock.patch("sonic_py_common.device_info.is_smartswitch", return_value=True), \
-            mock.patch("config.chassis_modules.get_config_module_state", return_value='up'):
+             mock.patch("config.chassis_modules.get_config_module_state", return_value='up'):
 
             db = FakeDb()
             runner = CliRunner()
