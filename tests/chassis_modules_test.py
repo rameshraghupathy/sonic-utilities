@@ -469,9 +469,9 @@ class TestChassisModules(object):
         db = FakeDb()
         runner = CliRunner()
 
+        # Initial state: module is up, no transition yet
         db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
-            'admin_status': 'up',
-            'state_transition_in_progress': 'False'
+            'admin_status': 'up'
         })
 
         result = runner.invoke(
@@ -484,6 +484,7 @@ class TestChassisModules(object):
         assert result.exit_code == 0
 
         fvs = db.cfgdb.get_entry('CHASSIS_MODULE', 'DPU0')
+        print(f"Final state: {fvs}")
         assert fvs.get('admin_status') == 'down'
         assert fvs.get('state_transition_in_progress') == 'True'
         assert 'transition_start_time' in fvs
