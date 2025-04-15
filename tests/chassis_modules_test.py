@@ -6,6 +6,8 @@ import show.main as show
 import config.main as config
 import tests.mock_tables.dbconnector
 from utilities_common.db import Db
+from utilities_common.chassis import TRANSITION_TIMEOUT
+
 from .utils import get_result_and_return_code
 from unittest import mock
 sys.modules['clicommon'] = mock.Mock()
@@ -442,7 +444,7 @@ class TestChassisModules(object):
         assert result == show_chassis_system_lags_output_lc4
 
     @mock.patch("utilities_common.chassis.is_smartswitch", return_value=True)
-    def test_shutdown_triggers_transition_tracking(mock_smartswitch):
+    def test_shutdown_triggers_transition_tracking(self, mock_smartswitch):
         db = Db()
         runner = CliRunner()
 
@@ -454,7 +456,7 @@ class TestChassisModules(object):
         })
 
         result = runner.invoke(
-            config.commands["chassis"].commands["modules"].commands["shutdown"],
+            config.config.commands["chassis"].commands["modules"].commands["shutdown"],
             ["DPU0"],
             obj=db
         )
@@ -468,6 +470,52 @@ class TestChassisModules(object):
         assert fvs.get('admin_status') == 'down'
         assert fvs.get('state_transition_in_progress') == 'True'
         assert 'transition_start_time' in fvs
+
+    @mock.patch("utilities_common.chassis.is_smartswitch", return_value=True)
+    def test_shutdown_skips_if_transition_in_progress_not_timed_out(self, mock_smartswitch):
+        db = Db()
+        runner = CliRunner()
+
+        transition_start_time = datetime.utcnow().isoformat()
+        db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
+            'admin_status': 'up',
+            'state_transition_in_progress': 'True',
+            'transition_start_time': transition_start_time
+        })
+
+        result = runner.invoke(
+            config.config.commands["chassis"].commands["modules"].commands["shutdown"],
+            ["DPU0"],
+            obj=db
+        )
+
+        assert "already in progress" in result.output
+        assert result.exit_code == 0
+
+    @mock.patch("utilities_common.chassis.is_smartswitch", return_value=True)
+    def test_shutdown_resets_if_transition_timed_out(self, mock_smartswitch):
+        db = Db()
+        runner = CliRunner()
+
+        timeout_start = (datetime.utcnow() - TRANSITION_TIMEOUT - timedelta(seconds=5)).isoformat()
+        db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
+            'admin_status': 'up',
+            'state_transition_in_progress': 'True',
+            'transition_start_time': timeout_start
+        })
+
+        result = runner.invoke(
+            config.config.commands["chassis"].commands["modules"].commands["shutdown"],
+            ["DPU0"],
+            obj=db
+        )
+
+        fvs = db.cfgdb.get_entry('CHASSIS_MODULE', 'DPU0')
+        assert result.exit_code == 0
+        assert fvs.get('admin_status') == 'down'
+        assert fvs.get('state_transition_in_progress') == 'True'
+        assert 'transition_start_time' in fvs
+        assert "timed out" in result.output
 
     @classmethod
     def teardown_class(cls):
