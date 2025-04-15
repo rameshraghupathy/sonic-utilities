@@ -543,10 +543,10 @@ class TestChassisModules(object):
             fvs = db.cfgdb.get_entry("CHASSIS_MODULE", "DPU0")
             print("fvs:", fvs)
 
-            # assert result.exit_code == 0
-            # assert fvs.get("admin_status") == "down"
-            # assert fvs.get("state_transition_in_progress") == "True"
-            # assert "transition_start_time" in fvs
+            assert result.exit_code == 0
+            assert fvs.get("admin_status") == "down"
+            assert fvs.get("state_transition_in_progress") == "True"
+            assert "transition_start_time" in fvs
 
     @classmethod
     def teardown_class(cls):
