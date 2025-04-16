@@ -469,14 +469,18 @@ class TestChassisModules(object):
         with mock.patch("config.chassis_modules.is_smartswitch", return_value=True), \
              mock.patch("config.chassis_modules.get_config_module_state", return_value='up'):
 
-            db = FakeConfigDBConnector()
-            runner = CliRunner()
-
-            # Prepopulate entry to simulate a valid 'up' state and no transition yet
-            db.cfgdb.set_entry('CHASSIS_MODULE', 'DPU0', {
-                'admin_status': 'up',
-                'state_transition_in_progress': 'False'
+            fake_cfgdb = FakeConfigDBConnector()
+            fake_cfgdb.set_entry("CHASSIS_MODULE", "DPU0", {
+                "admin_status": "up",
+                "state_transition_in_progress": "False"
             })
+
+            class FakeDb:
+                def __init__(self):
+                    self.cfgdb = fake_cfgdb
+
+            runner = CliRunner()
+            db = FakeDb()
 
             result = runner.invoke(
                 config.config.commands["chassis"].commands["modules"].commands["shutdown"],
