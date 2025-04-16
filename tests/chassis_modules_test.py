@@ -477,7 +477,7 @@ class TestChassisModules(object):
                 'state_transition_in_progress': 'True',
                 'transition_start_time': datetime.utcnow().isoformat()
             }
-            db.cfgdb.set_entry('CHASSIS_MODULE', "DPU0, fvs)
+            db.cfgdb.set_entry('CHASSIS_MODULE', "DPU0", fvs)
 
             result = runner.invoke(
                 config.config.commands["chassis"].commands["modules"].commands["shutdown"],
