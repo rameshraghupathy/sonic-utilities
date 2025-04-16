@@ -451,7 +451,7 @@ class TestChassisModules(object):
             db = Db()
             result = runner.invoke(
                 config.config.commands["chassis"].commands["modules"].commands["shutdown"],
-                ["DPU0"], 
+                ["DPU0"],
                 obj=db
             )
             print(result.exit_code)
