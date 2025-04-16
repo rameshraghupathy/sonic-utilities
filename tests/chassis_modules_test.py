@@ -462,9 +462,35 @@ class TestChassisModules(object):
             print(f"admin_status:{fvs['admin_status']}")
             print(f"state_transition_in_progress:{fvs['state_transition_in_progress']}")
             print(f"transition_start_time:{fvs['transition_start_time']}")
-            # assert fvs['admin_status'] == 'down'
-            # assert fvs['state_transition_in_progress'] == 'True'
-            # assert 'transition_start_time' in fvs
+            # assert result.exit_code == 0
+
+    def test_shutdown_triggers_transition_in_progress(self):
+        with mock.patch("config.chassis_modules.is_smartswitch", return_value=True), \
+             mock.patch("config.chassis_modules.get_config_module_state", return_value='up'):
+
+            runner = CliRunner()
+            db = Db()
+
+            fvs = {
+                'admin_status': 'up',
+                'state_transition_in_progress': 'True',
+                'transition_start_time': datetime.utcnow().isoformat()
+            }
+            db.cfgdb.set_entry('CHASSIS_MODULE', chassis_module_name, fvs)
+
+            result = runner.invoke(
+                config.config.commands["chassis"].commands["modules"].commands["shutdown"],
+                ["DPU0"],
+                obj=db
+            )
+            print(result.exit_code)
+            print(result.output)
+            assert result.exit_code == 0
+
+            fvs = db.cfgdb.get_entry('CHASSIS_MODULE', 'DPU0')
+            print(f"admin_status:{fvs['admin_status']}")
+            print(f"state_transition_in_progress:{fvs['state_transition_in_progress']}")
+            print(f"transition_start_time:{fvs['transition_start_time']}")
             # assert result.exit_code == 0
 
     @classmethod
