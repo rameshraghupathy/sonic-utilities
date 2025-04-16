@@ -503,12 +503,32 @@ class TestChassisModules(object):
             fvs = {
                 'admin_status': 'up',
                 'state_transition_in_progress': 'True',
-                'transition_start_time': (datetime.datetime.utcnow() - datetime.timedelta(minutes=30)).isoformat()
+                'transition_start_time': (datetime.utcnow() - datetime.timedelta(minutes=30)).isoformat()
             }
             db.cfgdb.set_entry('CHASSIS_MODULE', "DPU0", fvs)
 
             result = runner.invoke(
                 config.config.commands["chassis"].commands["modules"].commands["shutdown"],
+                ["DPU0"],
+                obj=db
+            )
+            print(result.exit_code)
+            print(result.output)
+            assert result.exit_code == 0
+
+            fvs = db.cfgdb.get_entry('CHASSIS_MODULE', 'DPU0')
+            print(f"admin_status:{fvs['admin_status']}")
+            print(f"state_transition_in_progress:{fvs['state_transition_in_progress']}")
+            print(f"transition_start_time:{fvs['transition_start_time']}")
+
+    def test_startup_triggers_transition_tracking(self):
+        with mock.patch("config.chassis_modules.is_smartswitch", return_value=True), \
+             mock.patch("config.chassis_modules.get_config_module_state", return_value='down'):
+
+            runner = CliRunner()
+            db = Db()
+            result = runner.invoke(
+                config.config.commands["chassis"].commands["modules"].commands["startup"],
                 ["DPU0"],
                 obj=db
             )
