@@ -449,12 +449,20 @@ class TestChassisModules(object):
 
             runner = CliRunner()
             db = Db()
-            result = runner.invoke(config.config.commands["chassis"].commands["modules"].commands["shutdown"], ["DPU0"], obj=db)
+            result = runner.invoke(
+                config.config.commands["chassis"].commands["modules"].commands["shutdown"],
+                ["DPU0"], 
+                obj=db
+            )
             print(result.exit_code)
             print(result.output)
             assert result.exit_code == 0
 
-            result = runner.invoke(show.cli.commands["chassis"].commands["modules"].commands["status"], ["DPU0"], obj=db)
+            result = runner.invoke(
+                show.cli.commands["chassis"].commands["modules"].commands["status"],
+                ["DPU0"],
+                obj=db
+            )
             print(result.exit_code)
             print(result.output)
             result_lines = result.output.strip('\n').split('\n')
