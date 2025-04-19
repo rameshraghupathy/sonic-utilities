@@ -1,8 +1,7 @@
 import sys
 import os
 from click.testing import CliRunner
-from datetime import datetime
-# from datetime import datetime, timedelta
+from datetime import datetime, timedelta
 # from config.chassis_modules import TRANSITION_TIMEOUT
 
 import show.main as show
@@ -503,7 +502,7 @@ class TestChassisModules(object):
             fvs = {
                 'admin_status': 'up',
                 'state_transition_in_progress': 'True',
-                'transition_start_time': (datetime.utcnow() - datetime.timedelta(minutes=30)).isoformat()
+                'transition_start_time': (datetime.utcnow() - timedelta(minutes=30)).isoformat()
             }
             db.cfgdb.set_entry('CHASSIS_MODULE', "DPU0", fvs)
 
