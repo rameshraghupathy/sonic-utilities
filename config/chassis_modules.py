@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 TIMEOUT_SECS = 10
 TRANSITION_TIMEOUT = timedelta(seconds=240)  # 4 minutes
 
+
 class StateDBHelper:
     def __init__(self, sonic_db):
         self.db = sonic_db
@@ -39,6 +40,7 @@ def modules():
     """Configure chassis modules"""
     pass
 
+
 def ensure_statedb_connected(db):
     if not hasattr(db, 'statedb'):
         chassisdb = db.db
@@ -55,6 +57,7 @@ def get_config_module_state(db, chassis_module_name):
             return 'up'
     else:
         return fvs['admin_status']
+
 
 def get_state_transition_in_progress(db, chassis_module_name):
     ensure_statedb_connected(db)
