@@ -458,7 +458,7 @@ class TestChassisModules(object):
             print(result.output)
             assert result.exit_code == 0
 
-            fvs = db.cfgdb.get_entry('CHASSIS_MODULE', 'DPU0')
+            fvs = db.db.get_all("STATE_DB", "CHASSIS_MODULE_TABLE|DPU0")
             print(f"admin_status:{fvs['admin_status']}")
             print(f"state_transition_in_progress:{fvs['state_transition_in_progress']}")
             print(f"transition_start_time:{fvs['transition_start_time']}")
@@ -487,7 +487,7 @@ class TestChassisModules(object):
             print(result.output)
             assert result.exit_code == 0
 
-            fvs = db.cfgdb.get_entry('CHASSIS_MODULE', 'DPU0')
+            fvs = db.db.get_all("STATE_DB", "CHASSIS_MODULE_TABLE|DPU0")
             print(f"admin_status:{fvs['admin_status']}")
             print(f"state_transition_in_progress:{fvs['state_transition_in_progress']}")
             print(f"transition_start_time:{fvs['transition_start_time']}")
@@ -515,7 +515,7 @@ class TestChassisModules(object):
             print(result.output)
             assert result.exit_code == 0
 
-            fvs = db.cfgdb.get_entry('CHASSIS_MODULE', 'DPU0')
+            fvs = db.db.get_all("STATE_DB", "CHASSIS_MODULE_TABLE|DPU0")
             print(f"admin_status:{fvs['admin_status']}")
             print(f"state_transition_in_progress:{fvs['state_transition_in_progress']}")
             print(f"transition_start_time:{fvs['transition_start_time']}")
@@ -535,7 +535,7 @@ class TestChassisModules(object):
             print(result.output)
             assert result.exit_code == 0
 
-            fvs = db.cfgdb.get_entry('CHASSIS_MODULE', 'DPU0')
+            fvs = db.db.get_all("STATE_DB", "CHASSIS_MODULE_TABLE|DPU0")
             print(f"admin_status:{fvs['admin_status']}")
             print(f"state_transition_in_progress:{fvs['state_transition_in_progress']}")
             print(f"transition_start_time:{fvs['transition_start_time']}")
