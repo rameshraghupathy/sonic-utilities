@@ -458,11 +458,22 @@ class TestChassisModules(object):
             print(result.output)
             assert result.exit_code == 0
 
-            fvs = db.db.get_all("STATE_DB", "CHASSIS_MODULE_TABLE|DPU0")
-            print(f"admin_status:{fvs['admin_status']}")
-            print(f"state_transition_in_progress:{fvs['state_transition_in_progress']}")
-            print(f"transition_start_time:{fvs['transition_start_time']}")
-            # assert result.exit_code == 0
+            # Check CONFIG_DB for admin_status
+            cfg_fvs = db.cfgdb.get_entry("CHASSIS_MODULE", "DPU0")
+            admin_status = cfg_fvs.get("admin_status")
+            print(f"admin_status: {admin_status}")
+            assert admin_status == "down"
+
+            # Check STATE_DB for transition flags
+            state_fvs = db.db.get_all("STATE_DB", "CHASSIS_MODULE_TABLE|DPU0")
+            transition_flag = state_fvs.get("state_transition_in_progress")
+            transition_time = state_fvs.get("transition_start_time")
+
+            print(f"state_transition_in_progress: {transition_flag}")
+            print(f"transition_start_time: {transition_time}")
+
+            assert transition_flag == "True"
+            assert transition_time is not None
 
     def test_shutdown_triggers_transition_in_progress(self):
         with mock.patch("config.chassis_modules.is_smartswitch", return_value=True), \
