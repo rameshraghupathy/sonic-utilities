@@ -2,7 +2,12 @@ import sys
 import os
 from click.testing import CliRunner
 from datetime import datetime, timedelta
-# from config.chassis_modules import TRANSITION_TIMEOUT
+from config.chassis_modules import (
+    set_state_transition_in_progress,
+    is_transition_timed_out,
+    shutdown_chassis_module,
+    TRANSITION_TIMEOUT
+)
 
 import show.main as show
 import config.main as config
@@ -549,8 +554,8 @@ class TestChassisModules(object):
             print(f"transition_start_time:{fvs['transition_start_time']}")
 
     def test_set_state_transition_in_progress_sets_and_removes_timestamp():
-        db = MagicMock()
-        db.statedb = MagicMock()
+        db = mock.MagicMock()
+        db.statedb = mock.MagicMock()
 
         # Case 1: Set value to 'True' (adds timestamp)
         db.statedb.get_entry.return_value = {}
@@ -576,8 +581,8 @@ class TestChassisModules(object):
         assert "transition_start_time" not in updated_entry
 
     def test_is_transition_timed_out_all_paths():
-        db = MagicMock()
-        db.statedb = MagicMock()
+        db = mock.MagicMock()
+        db.statedb = mock.MagicMock()
 
         # Case 1: No entry
         db.statedb.get_entry.return_value = None
