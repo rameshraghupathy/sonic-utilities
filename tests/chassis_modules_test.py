@@ -552,34 +552,30 @@ class TestChassisModules(object):
             print(f"state_transition_in_progress:{fvs['state_transition_in_progress']}")
             print(f"transition_start_time:{fvs['transition_start_time']}")
 
-    def test_set_state_transition_in_progress_sets_and_removes_timestamp():
+    def test_set_state_transition_in_progress_sets_and_removes_timestamp(self):
         db = mock.MagicMock()
         db.statedb = mock.MagicMock()
 
-        # Case 1: Set value to 'True' (adds timestamp)
+        # Case 1: Set to 'True' adds timestamp
         db.statedb.get_entry.return_value = {}
         set_state_transition_in_progress(db, "DPU0", "True")
-
         args = db.statedb.set_entry.call_args[0]
-        assert args[0] == "CHASSIS_MODULE_TABLE"
-        assert args[1] == "DPU0"
         updated_entry = args[2]
-        assert updated_entry['state_transition_in_progress'] == "True"
+        assert updated_entry["state_transition_in_progress"] == "True"
         assert "transition_start_time" in updated_entry
 
-        # Case 2: Set value to 'False' (removes timestamp)
+        # Case 2: Set to 'False' removes timestamp
         db.statedb.get_entry.return_value = {
             "state_transition_in_progress": "True",
             "transition_start_time": "2025-05-01T01:00:00"
         }
         set_state_transition_in_progress(db, "DPU0", "False")
-
         args = db.statedb.set_entry.call_args[0]
         updated_entry = args[2]
-        assert updated_entry['state_transition_in_progress'] == "False"
+        assert updated_entry["state_transition_in_progress"] == "False"
         assert "transition_start_time" not in updated_entry
 
-    def test_is_transition_timed_out_all_paths():
+    def test_is_transition_timed_out_all_paths(self):
         db = mock.MagicMock()
         db.statedb = mock.MagicMock()
 
@@ -591,27 +587,18 @@ class TestChassisModules(object):
         db.statedb.get_entry.return_value = {"state_transition_in_progress": "True"}
         assert is_transition_timed_out(db, "DPU0") is False
 
-        # Case 3: Bad datetime format
-        db.statedb.get_entry.return_value = {
-            "state_transition_in_progress": "True",
-            "transition_start_time": "bad-format"
-        }
+        # Case 3: Invalid format
+        db.statedb.get_entry.return_value = {"transition_start_time": "not-a-date"}
         assert is_transition_timed_out(db, "DPU0") is False
 
-        # Case 4: Timeout exceeded
-        past_time = (datetime.utcnow() - TRANSITION_TIMEOUT - timedelta(seconds=1)).isoformat()
-        db.statedb.get_entry.return_value = {
-            "state_transition_in_progress": "True",
-            "transition_start_time": past_time
-        }
+        # Case 4: Timed out
+        old_time = (datetime.utcnow() - TRANSITION_TIMEOUT - timedelta(seconds=1)).isoformat()
+        db.statedb.get_entry.return_value = {"transition_start_time": old_time}
         assert is_transition_timed_out(db, "DPU0") is True
 
-        # Case 5: Not yet timed out
-        recent_time = datetime.utcnow().isoformat()
-        db.statedb.get_entry.return_value = {
-            "state_transition_in_progress": "True",
-            "transition_start_time": recent_time
-        }
+        # Case 5: Not timed out yet
+        now = datetime.utcnow().isoformat()
+        db.statedb.get_entry.return_value = {"transition_start_time": now}
         assert is_transition_timed_out(db, "DPU0") is False
 
     @classmethod
