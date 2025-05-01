@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 from config.chassis_modules import (
     set_state_transition_in_progress,
     is_transition_timed_out,
-    shutdown_chassis_module,
     TRANSITION_TIMEOUT
 )
 
